@@ -4,11 +4,9 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-	CharacterController characterController;
-	
 	public Camera playerCamera;
     public GameObject flashlight;
-    public Transform autoLightRay;
+    public Material lightBlockerMaterial;
 	public float speed = 6.0f;
 	public float gravity = 20.0f;
 	public float lookSpeed = 2.0f;
@@ -18,9 +16,11 @@ public class PlayerController : MonoBehaviour
     public float grabMaxDistance = 4.0f;
     public float grabForceFactor = 10.0f;
 
+    private CharacterController characterController;
     private Vector3 move = Vector3.zero;
 	private float rotationX = 0;
     private Rigidbody grabbed;
+    private bool isIndoor = false;
 
     // Start is called before the first frame update
     void Start()
@@ -50,19 +50,29 @@ public class PlayerController : MonoBehaviour
         playerCamera.transform.localRotation = Quaternion.Euler(rotationX, 0, 0);
         transform.rotation *= Quaternion.Euler(0, Input.GetAxis("Mouse X") * lookSpeed, 0);
 
-        Ray groundRay = new Ray(autoLightRay.position, autoLightRay.forward);
-        RaycastHit groundHit;
-
-        if (Physics.Raycast(groundRay, out groundHit, 5.0f, 1 << 6))
+        if (isIndoor)
         {
+            if (RenderSettings.ambientIntensity > 0)
+            {
+                RenderSettings.ambientIntensity = Mathf.Max(0, RenderSettings.ambientIntensity - Time.deltaTime / 0.5f);
+                lightBlockerMaterial.color = new Color(0, 0, 0, RenderSettings.ambientIntensity);
+            }
             if (!flashlight.activeSelf)
             {
                 flashlight.SetActive(true);
             }
         }
-        else if (flashlight.activeSelf)
+        else
         {
-            flashlight.SetActive(false);
+            if (RenderSettings.ambientIntensity < 1)
+            {
+                RenderSettings.ambientIntensity = Mathf.Min(1, RenderSettings.ambientIntensity + Time.deltaTime / 0.5f);
+                lightBlockerMaterial.color = new Color(0, 0, 0, RenderSettings.ambientIntensity);
+            }
+            if (flashlight.activeSelf)
+            {
+                flashlight.SetActive(false);
+            }
         }
 
         if (Input.GetMouseButtonDown(0))
@@ -102,5 +112,15 @@ public class PlayerController : MonoBehaviour
             }
         }
     }
-    
+
+    private void OnTriggerEnter(Collider other)
+    {
+        isIndoor = true;
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        isIndoor = false;
+    }
+
 }
