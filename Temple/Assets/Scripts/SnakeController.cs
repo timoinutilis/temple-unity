@@ -8,11 +8,14 @@ public class SnakeController : MonoBehaviour
     {
         Idle,
         Walk,
-        Turn
+        Turn,
+        Look
     }
 
 
+    public Transform headBone;
     public float speed = 6.0f;
+    public float lookDistance = 20.0f;
 
     private CharacterController characterController;
     private Animator animator;
@@ -32,12 +35,21 @@ public class SnakeController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        float dist = 0.0f;
         timeCounter -= Time.deltaTime;
         switch (state)
         {
             case State.Idle:
-                if (timeCounter <= 0)
+                if (timeCounter > 0)
+                {
+                    dist = (transform.position - Camera.main.transform.position).magnitude;
+                    if (dist <= lookDistance)
+                    {
+                        state = State.Look;
+                        animator.SetBool("isLooking", true);
+                    }
+                }
+                else
                 {
                     state = State.Turn;
                     timeCounter = 1;
@@ -66,6 +78,19 @@ public class SnakeController : MonoBehaviour
                     timeCounter = Random.Range(5, 10);
                 }
                 break;
+            case State.Look:
+                dist = (transform.position - Camera.main.transform.position).magnitude;
+                if (dist <= lookDistance)
+                {
+                }
+                else
+                {
+                    state = State.Idle;
+                    animator.SetFloat("speed", 0);
+                    animator.SetBool("isLooking", false);
+                    timeCounter = 1.0f;
+                }
+                break;
         }
 
         if (!characterController.isGrounded)
@@ -73,4 +98,17 @@ public class SnakeController : MonoBehaviour
             characterController.Move(Vector3.down * 20 * Time.deltaTime);
         }
     }
+
+    private void LateUpdate()
+    {
+        switch (state)
+        {
+            case State.Look:
+                Quaternion q = Quaternion.LookRotation(Camera.main.transform.position - headBone.position);
+                q *= Quaternion.Euler(Vector3.right * 90);
+                headBone.rotation = Quaternion.Lerp(headBone.rotation, q, 0.6f);
+                break;
+        }
+    }
+
 }
