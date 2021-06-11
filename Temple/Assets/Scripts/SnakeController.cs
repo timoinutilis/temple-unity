@@ -22,6 +22,7 @@ public class SnakeController : MonoBehaviour
     private State state = State.Idle;
     private float timeCounter = 0;
     private float nextRotation = 0;
+    private float lookRatio = 0;
 
     // Start is called before the first frame update
     void Start()
@@ -35,19 +36,29 @@ public class SnakeController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        float dist = 0.0f;
+        Vector3 diff = Camera.main.transform.position - transform.position;
+        float dist = diff.magnitude;
+        float dot = Vector3.Dot(transform.forward, diff.normalized);
+        bool isInView = dist <= lookDistance && dot > 0;
+        if (state != State.Look)
+        {
+            lookRatio = Mathf.Max(0, lookRatio - Time.deltaTime);
+
+            if (isInView)
+            {
+                state = State.Look;
+                animator.SetFloat("speed", 0);
+                animator.SetBool("isLooking", true);
+            }
+        }
+
+
         timeCounter -= Time.deltaTime;
         switch (state)
         {
             case State.Idle:
                 if (timeCounter > 0)
                 {
-                    dist = (transform.position - Camera.main.transform.position).magnitude;
-                    if (dist <= lookDistance)
-                    {
-                        state = State.Look;
-                        animator.SetBool("isLooking", true);
-                    }
                 }
                 else
                 {
@@ -79,9 +90,9 @@ public class SnakeController : MonoBehaviour
                 }
                 break;
             case State.Look:
-                dist = (transform.position - Camera.main.transform.position).magnitude;
-                if (dist <= lookDistance)
+                if (isInView)
                 {
+                    lookRatio = Mathf.Min(1, lookRatio + Time.deltaTime);
                 }
                 else
                 {
@@ -93,7 +104,11 @@ public class SnakeController : MonoBehaviour
                 break;
         }
 
-        if (!characterController.isGrounded)
+        if (characterController.isGrounded)
+        {
+
+        }
+        else
         {
             characterController.Move(Vector3.down * 20 * Time.deltaTime);
         }
@@ -101,14 +116,16 @@ public class SnakeController : MonoBehaviour
 
     private void LateUpdate()
     {
-        switch (state)
+        if (lookRatio > 0)
         {
-            case State.Look:
-                Quaternion q = Quaternion.LookRotation(Camera.main.transform.position - headBone.position);
-                q *= Quaternion.Euler(Vector3.right * 90);
-                headBone.rotation = Quaternion.Lerp(headBone.rotation, q, 0.6f);
-                break;
+            Quaternion q = Quaternion.LookRotation(Camera.main.transform.position - headBone.position);
+            q *= Quaternion.Euler(Vector3.right * 90);
+            headBone.rotation = Quaternion.Lerp(headBone.rotation, q, lookRatio * 0.8f);
         }
     }
 
+    private void OnControllerColliderHit(ControllerColliderHit hit)
+    {
+        //Debug.Log("hit: " + hit.normal);
+    }
 }
