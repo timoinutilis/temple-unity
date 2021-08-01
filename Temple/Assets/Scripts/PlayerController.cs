@@ -4,18 +4,26 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-	public Camera playerCamera;
+    public enum State
+    {
+        Paused,
+        Playing
+    }
+
+    public Camera playerCamera;
     public GameObject flashlight;
     public Material lightBlockerMaterial;
-	public float speed = 6.0f;
-	public float gravity = 20.0f;
-	public float lookSpeed = 2.0f;
+    public float speed = 6.0f;
+    public float gravity = 20.0f;
+    public float lookSpeed = 2.0f;
     public float lookXLimit = 45.0f;
+    public float pauseRotationSpeed = 1.0f;
     public Transform grab;
     public float grabDistance = 2.0f;
     public float grabMaxDistance = 4.0f;
     public float grabForceFactor = 10.0f;
 
+    private State state = State.Paused;
     private CharacterController characterController;
     private Vector3 move = Vector3.zero;
 	private float rotationX = 0;
@@ -27,12 +35,33 @@ public class PlayerController : MonoBehaviour
     {
         characterController = GetComponent<CharacterController>();
 
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        // set feet on ground
+        characterController.Move(new Vector3(0, -1, 0));
+
+        SetState(State.Paused);
     }
 
     // Update is called once per frame
     void Update()
+    {
+        switch (state)
+        {
+            case State.Paused:
+                UpdatePaused();
+                break;
+            case State.Playing:
+                UpdatePlaying();
+                break;
+        }
+    }
+
+    private void UpdatePaused()
+    {
+        transform.Rotate(new Vector3(0, pauseRotationSpeed * Time.deltaTime, 0));
+        UpdateFlashlight();
+    }
+
+    private void UpdatePlaying()
     {
         if (characterController.isGrounded)
         {
@@ -50,30 +79,7 @@ public class PlayerController : MonoBehaviour
         playerCamera.transform.localRotation = Quaternion.Euler(rotationX, 0, 0);
         transform.rotation *= Quaternion.Euler(0, Input.GetAxis("Mouse X") * lookSpeed, 0);
 
-        if (isIndoor)
-        {
-            if (RenderSettings.ambientIntensity > 0)
-            {
-                RenderSettings.ambientIntensity = Mathf.Max(0, RenderSettings.ambientIntensity - Time.deltaTime / 0.5f);
-                lightBlockerMaterial.color = new Color(0, 0, 0, RenderSettings.ambientIntensity);
-            }
-            if (!flashlight.activeSelf)
-            {
-                flashlight.SetActive(true);
-            }
-        }
-        else
-        {
-            if (RenderSettings.ambientIntensity < 1)
-            {
-                RenderSettings.ambientIntensity = Mathf.Min(1, RenderSettings.ambientIntensity + Time.deltaTime / 0.5f);
-                lightBlockerMaterial.color = new Color(0, 0, 0, RenderSettings.ambientIntensity);
-            }
-            if (flashlight.activeSelf)
-            {
-                flashlight.SetActive(false);
-            }
-        }
+        UpdateFlashlight();
 
         if (Input.GetMouseButtonDown(0))
         {
@@ -102,6 +108,34 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    void UpdateFlashlight()
+    {
+        if (isIndoor)
+        {
+            if (RenderSettings.ambientIntensity > 0)
+            {
+                RenderSettings.ambientIntensity = Mathf.Max(0, RenderSettings.ambientIntensity - Time.deltaTime / 0.5f);
+                lightBlockerMaterial.color = new Color(0, 0, 0, RenderSettings.ambientIntensity);
+            }
+            if (!flashlight.activeSelf)
+            {
+                flashlight.SetActive(true);
+            }
+        }
+        else
+        {
+            if (RenderSettings.ambientIntensity < 1)
+            {
+                RenderSettings.ambientIntensity = Mathf.Min(1, RenderSettings.ambientIntensity + Time.deltaTime / 0.5f);
+                lightBlockerMaterial.color = new Color(0, 0, 0, RenderSettings.ambientIntensity);
+            }
+            if (flashlight.activeSelf)
+            {
+                flashlight.SetActive(false);
+            }
+        }
+    }
+
     void FixedUpdate()
     {
         if (grabbed != null)
@@ -110,6 +144,22 @@ public class PlayerController : MonoBehaviour
             {
                 grabbed.AddForce(move * grabForceFactor);
             }
+        }
+    }
+
+    public void SetState(State value)
+    {
+        state = value;
+        switch (state)
+        {
+            case State.Paused:
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+                break;
+            case State.Playing:
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+                break;
         }
     }
 
