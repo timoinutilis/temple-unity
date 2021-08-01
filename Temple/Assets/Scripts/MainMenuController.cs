@@ -11,11 +11,17 @@ public class MainMenuController : MonoBehaviour
     public GameObject resumeButton;
     public GameObject quitButton;
 
+    private Animator animator;
+
     // Start is called before the first frame update
     void Start()
     {
+        animator = GetComponent<Animator>();
+
         saveButton.SetActive(false);
         resumeButton.SetActive(false);
+
+        animator.SetBool("visible", true);
     }
 
     // Update is called once per frame
@@ -26,7 +32,7 @@ public class MainMenuController : MonoBehaviour
 
     public void StartNewGame()
     {
-        gameObject.SetActive(false);
+        animator.SetBool("visible", false);
         player.SetState(PlayerController.State.Playing);
     }
 
@@ -48,6 +54,11 @@ public class MainMenuController : MonoBehaviour
     public void Quit()
     {
         Application.Quit();
+    }
+
+    public void DidFinishOutAnimation()
+    {
+        gameObject.SetActive(false);
     }
 
 }
