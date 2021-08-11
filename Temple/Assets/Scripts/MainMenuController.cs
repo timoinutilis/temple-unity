@@ -4,7 +4,14 @@ using UnityEngine;
 
 public class MainMenuController : MonoBehaviour
 {
-    public PlayerController player;
+    public enum Mode
+    {
+        Start,
+        Ingame
+    }
+
+    public GameManager gameManager;
+
     public GameObject startButton;
     public GameObject saveButton;
     public GameObject loadButton;
@@ -13,15 +20,9 @@ public class MainMenuController : MonoBehaviour
 
     private Animator animator;
 
-    // Start is called before the first frame update
-    void Start()
+    void Awake()
     {
         animator = GetComponent<Animator>();
-
-        saveButton.SetActive(false);
-        resumeButton.SetActive(false);
-
-        animator.SetBool("visible", true);
     }
 
     // Update is called once per frame
@@ -30,30 +31,56 @@ public class MainMenuController : MonoBehaviour
         
     }
 
-    public void StartNewGame()
+    public void SetMode(Mode mode)
+    {
+        switch (mode)
+        {
+            case Mode.Start:
+                saveButton.SetActive(false);
+                resumeButton.SetActive(false);
+                break;
+            case Mode.Ingame:
+                saveButton.SetActive(true);
+                resumeButton.SetActive(true);
+                break;
+        }
+        loadButton.SetActive(gameManager.HasSavedGameState);
+    }
+
+    public void OpenMenu()
+    {
+        gameObject.SetActive(true);
+        animator.SetBool("visible", true);
+    }
+
+    public void CloseMenu()
     {
         animator.SetBool("visible", false);
-        player.SetState(PlayerController.State.Playing);
+    }
+
+    public void StartNewGame()
+    {
+        gameManager.StartNewGame();
     }
 
     public void SaveGame()
     {
-
+        gameManager.SaveGameState();
     }
 
     public void LoadGame()
     {
-
+        gameManager.LoadGameState();
     }
 
     public void ResumeGame()
     {
-
+        gameManager.SetState(GameManager.State.Playing);
     }
 
     public void Quit()
     {
-        Application.Quit();
+        gameManager.Quit();
     }
 
     public void DidFinishOutAnimation()

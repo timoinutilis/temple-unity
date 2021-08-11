@@ -24,12 +24,15 @@ public class SnakeController : MonoBehaviour
     private float nextRotation = 0;
     private float lookRatio = 0;
 
-    // Start is called before the first frame update
-    void Start()
+    private void Awake()
     {
         characterController = GetComponent<CharacterController>();
         animator = GetComponent<Animator>();
+    }
 
+    // Start is called before the first frame update
+    void Start()
+    {
         timeCounter = Random.Range(0, 5);
     }
 

@@ -30,11 +30,14 @@ public class PlayerController : MonoBehaviour
     private Rigidbody grabbed;
     private bool isIndoor = false;
 
+    void Awake()
+    {
+        characterController = GetComponent<CharacterController>();
+    }
+
     // Start is called before the first frame update
     void Start()
     {
-        characterController = GetComponent<CharacterController>();
-
         // set feet on ground
         characterController.Move(new Vector3(0, -1, 0));
 
@@ -153,12 +156,8 @@ public class PlayerController : MonoBehaviour
         switch (state)
         {
             case State.Paused:
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible = true;
                 break;
             case State.Playing:
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
                 break;
         }
     }
@@ -171,6 +170,19 @@ public class PlayerController : MonoBehaviour
     private void OnTriggerExit(Collider other)
     {
         isIndoor = false;
+    }
+
+    public void WriteGameState(GameState gameState)
+    {
+        gameState.playerPosition = characterController.transform.position;
+        gameState.playerRotation = characterController.transform.rotation;
+    }
+
+    public void ReadGameState(GameState gameState)
+    {
+        characterController.enabled = false;
+        characterController.transform.SetPositionAndRotation(gameState.playerPosition, gameState.playerRotation);
+        characterController.enabled = true;
     }
 
 }
