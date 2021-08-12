@@ -12,6 +12,7 @@ public class PlayerController : MonoBehaviour
 
     public Camera playerCamera;
     public GameObject flashlight;
+    public AudioSource audioSource;
     public Material lightBlockerMaterial;
     public float speed = 6.0f;
     public float gravity = 20.0f;
@@ -69,10 +70,25 @@ public class PlayerController : MonoBehaviour
         if (characterController.isGrounded)
         {
             move = speed * transform.forward * Input.GetAxis("Vertical") + transform.right * Input.GetAxis("Horizontal");
+            if (move.magnitude > 0)
+            {
+                if (!audioSource.isPlaying)
+                {
+                    audioSource.Play();
+                }
+            }
+            else if (audioSource.isPlaying)
+            {
+                audioSource.Pause();
+            }
         }
         else
         {
             move.y -= gravity * Time.deltaTime;
+            //if (audioSource.isPlaying)
+            //{
+            //    audioSource.Pause();
+            //}
         }
 
         characterController.Move(move * Time.deltaTime);
