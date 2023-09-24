@@ -1,3 +1,3 @@
 # Temple
 
-Experimental desert exploration game.
+Prototype of experimental desert exploration game.
